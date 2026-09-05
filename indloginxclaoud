@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login / Sign In</title>
+  <style>
+    :root {
+      --bg: #09090b;
+      --card-bg: rgba(18, 18, 23, 0.75);
+      --border: rgba(255, 255, 255, 0.1);
+      --text: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --accent: #8b5cf6;
+      --accent-hover: #7c3aed;
+      --error: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Ambient Three.js Canvas */
+    #starfield {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Blob Follower */
+    #cursorBlob {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, rgba(0,0,0,0) 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #cursorBlob.show {
+      opacity: 1;
+    }
+
+    /* Card Container */
+    .login-panel {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 420px;
+      padding: 2.5rem;
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 1.5rem;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      will-change: transform;
+    }
+
+    /* Headers & Badges */
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .admin-badge {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      color: #c4b5fd;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      margin: 0 auto 1rem auto;
+      width: fit-content;
+    }
+
+    .title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    /* Switcher Controls */
+    .mode-toggle {
+      display: flex;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 0.75rem;
+      padding: 0.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .mode-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mode-btn.active {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text);
+    }
+
+    /* Form Fields */
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border);
+      border-radius: 0.75rem;
+      color: var(--text);
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+    }
+
+    input.err {
+      border-color: var(--error);
+    }
+
+    .error-text {
+      display: none;
+      color: var(--error);
+      font-size: 0.75rem;
+      margin-top: 0.375rem;
+    }
+
+    .error-text.show {
+      display: block;
+    }
+
+    .pw-toggle {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      cursor: pointer;
+    }
+
+    /* Buttons & Actions */
+    .submit-btn {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 0.75rem;
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .submit-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .submit-btn .spinner {
+      display: none;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    .submit-btn.loading .btn-text {
+      display: none;
+    }
+
+    .submit-btn.loading .spinner {
+      display: block;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(18, 18, 23, 0.9);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.75rem 1.5rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 10;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .signup-row {
+      margin-top: 1.5rem;
+      text-align: center;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .signup-row a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Ambient WebGL Starfield -->
+  <canvas id="starfield"></canvas>
+
+  <!-- Interactive Liquid Glow -->
+  <div id="cursorBlob"></div>
+
+  <!-- Main Login Panel -->
+  <main class="login-panel" id="loginPanel">
+    <div class="header">
+      <div class="admin-badge" id="adminBadge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z"/>
+        </svg>
+        Admin Mode
+      </div>
+      <h1 class="title" id="titleText">Welcome back</h1>
+      <p class="subtitle" id="subText">Log in to view your projects and messages.</p>
+    </div>
+
+    <div class="mode-toggle">
+      <button class="mode-btn active" data-mode="user">User</button>
+      <button class="mode-btn" data-mode="admin">Admin</button>
+    </div>
+
+    <form id="authForm" novalidate>
+      <div class="form-group">
+        <label for="idInput" id="idLabel">Email address</label>
+        <div class="input-wrapper">
+          <input type="text" id="idInput" placeholder="jane@email.com" required />
+        </div>
+        <div class="error-text" id="idErr">Please enter a valid identifier.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="pwInput">Password</label>
+        <div class="input-wrapper">
+          <input type="password" id="pwInput" placeholder="••••••••" required />
+          <button type="button" class="pw-toggle" id="pwToggle">Show</button>
+        </div>
+        <div class="error-text" id="pwErr">Password must be at least 6 characters.</div>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">
+        <span class="btn-text" id="btnText">Log in</span>
+        <div class="spinner"></div>
+      </button>
+    </form>
+
+    <div class="signup-row" id="signupRow">
+      Don't have an account? <a href="#">Sign up</a>
+    </div>
+  </main>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"><span id="toastText"></span></div>
+
+  <!-- UI & Interactivity Script -->
+  <script>
+    const form = document.getElementById('authForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const toggleBtns = document.querySelectorAll('.mode-btn');
+    const adminBadge = document.getElementById('adminBadge');
+    const titleText = document.getElementById('titleText');
+    const subText = document.getElementById('subText');
+    const idLabel = document.getElementById('idLabel');
+    const idInput = document.getElementById('idInput');
+    const signupRow = document.getElementById('signupRow');
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toastText');
+
+    let mode = 'user';
+
+    // Mode Switching Logic
+    function setMode(newMode) {
+      mode = newMode;
+      toggleBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === mode);
+      });
+
+      if (mode === 'admin') {
+        titleText.textContent = 'Admin Console';
+        subText.textContent = 'Enter your admin credentials to continue.';
+        idLabel.textContent = 'Admin ID or Email';
+        idInput.placeholder = 'admin@system.com';
+        adminBadge.style.display = 'inline-flex';[cite: 6]
+        signupRow.style.display = 'none';[cite: 6]
+        btnText.textContent = 'Sign in to Admin Console';[cite: 6]
+      } else {
+        titleText.textContent = 'Welcome back';[cite: 6]
+        subText.textContent = 'Log in to view your projects and messages.';[cite: 6]
+        idLabel.textContent = 'Email address';[cite: 6]
+        idInput.placeholder = 'jane@email.com';[cite: 6]
+        adminBadge.style.display = 'none';[cite: 6]
+        signupRow.style.display = 'block';[cite: 6]
+        btnText.textContent = 'Log in';[cite: 6]
+      }
+    }
+
+    toggleBtns.forEach(btn => {
+      btn.addEventListener('click', () => setMode(btn.dataset.mode));[cite: 6]
+    });
+
+    // Toggle Password Visibility
+    const pwInput = document.getElementById('pwInput');[cite: 6]
+    const pwToggle = document.getElementById('pwToggle');[cite: 6]
+
+    pwToggle.addEventListener('click', () => {
+      const isPw = pwInput.type === 'password';[cite: 6]
+      pwInput.type = isPw ? 'text' : 'password';[cite: 6]
+      pwToggle.textContent = isPw ? 'Hide' : 'Show';[cite: 6]
+    });
+
+    // Form Validation & Submission
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();[cite: 6]
+      
+      const idVal = idInput.value.trim();[cite: 6]
+      const pwVal = pwInput.value.trim();[cite: 6]
+      const idErr = document.getElementById('idErr');[cite: 6]
+      const pwErr = document.getElementById('pwErr');[cite: 6]
+      let valid = true;
+
+      if (!idVal) {
+        idInput.classList.add('err');[cite: 6]
+        idErr.classList.add('show');[cite: 6]
+        valid = false;
+      } else {
+        idInput.classList.remove('err');[cite: 6]
+        idErr.classList.remove('show');[cite: 6]
+      }
+
+      if (pwVal.length < 6) {
+        pwInput.classList.add('err');[cite: 6]
+        pwErr.classList.add('show');[cite: 6]
+        valid = false;
+      } else {
+        pwInput.classList.remove('err');[cite: 6]
+        pwErr.classList.remove('show');[cite: 6]
+      }
+
+      if (!valid) return;
+
+      submitBtn.classList.add('loading');[cite: 6]
+
+      setTimeout(() => {
+        submitBtn.classList.remove('loading');[cite: 6]
+        if (mode === 'admin') {
+          showToast('Admin access granted');
+          setTimeout(() => { window.location.href = 'admin.html'; }, 1000);
+        } else {
+          showToast('Signed in successfully');[cite: 6]
+          setTimeout(() => { window.location.href = 'index.html'; }, 1000);[cite: 6]
+        }
+      }, 1200);
+    });
+
+    function showToast(msg) {
+      toastText.textContent = msg;[cite: 6]
+      toast.classList.add('show');[cite: 6]
+      setTimeout(() => toast.classList.remove('show'), 2600);[cite: 6]
+    }
+
+    // 3D Tilt Effect on Panel
+    const panel = document.getElementById('loginPanel');[cite: 6]
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;[cite: 5, 6]
+
+    if (!reduceMotion) {
+      document.addEventListener('mousemove', (e) => {
+        const r = panel.getBoundingClientRect();
+        const cx = r.left + r.width / 2;
+        const cy = r.top + r.height / 2;
+        const px = (e.clientX - cx) / (window.innerWidth / 2);
+        const py = (e.clientY - cy) / (window.innerHeight / 2);
+        
+        panel.style.transform = `perspective(1000px) rotateX(${(-py * 6).toFixed(2)}deg) rotateY(${(px * 6).toFixed(2)}deg)`;[cite: 4, 5]
+      });
+    }
+
+    // Liquid Cursor Blob
+    (function(){
+      const blob = document.getElementById('cursorBlob');[cite: 4, 5, 6]
+      if(!blob || window.matchMedia('(pointer:coarse)').matches) return;[cite: 4, 5, 6]
+      let bx=innerWidth/2, by=innerHeight/2, tx=bx, ty=by, shown=false;[cite: 4, 5, 6]
+      window.addEventListener('mousemove', e=>{
+        tx = e.clientX; ty = e.clientY;[cite: 4, 5, 6]
+        if(!shown){ shown=true; blob.classList.add('show'); }[cite: 4, 5, 6]
+      });
+      function loop(){
+        bx += (tx-bx)*0.12;[cite: 4, 5, 6]
+        by += (ty-by)*0.12;[cite: 4, 5, 6]
+        blob.style.transform = `translate(${bx-110}px, ${by-110}px)`;[cite: 4, 6]
+        requestAnimationFrame(loop);[cite: 4, 5, 6]
+      }
+      loop();[cite: 4, 5, 6]
+    })();
+  </script>
+
+  <!-- Ambient 3D Starfield -->
+  <script type="importmap">
+  { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+  </script>
+  <script type="module">
+    try {
+      const THREE = await import('three');[cite: 4, 5]
+      const canvas = document.getElementById('starfield');[cite: 4, 5, 6]
+      if(!canvas) throw new Error('no starfield canvas');[cite: 4, 5]
+      const reduceMotion2 = window.matchMedia('(prefers-reduced-motion: reduce)').matches;[cite: 4, 5]
+
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha:true, antialias:false });[cite: 4, 5]
+      renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));[cite: 4, 5]
+      renderer.setClearColor(0x000000, 0);[cite: 4, 5]
+
+      const scene = new THREE.Scene();[cite: 4, 5]
+      const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 100);[cite: 4, 5]
+      camera.position.z = 10;[cite: 4, 5]
+
+      function resize(){
+        renderer.setSize(innerWidth, innerHeight, false);[cite: 4, 5]
+        camera.aspect = innerWidth/innerHeight;[cite: 4, 5]
+        camera.updateProjectionMatrix();[cite: 4, 5]
+      }
+      window.addEventListener('resize', resize);[cite: 4, 5]
+      resize();[cite: 4, 5]
+
+      const STAR_COUNT = innerWidth < 700 ? 350 : 700;[cite: 4]
+      const starGeo = new THREE.BufferGeometry();[cite: 4, 5]
+      const starPos = new Float32Array(STAR_COUNT*3);[cite: 4, 5]
+      for(let i=0;i<STAR_COUNT;i++){
+        starPos[i*3]   = (Math.random()-0.5)*36;[cite: 4, 5]
+        starPos[i*3+1] = (Math.random()-0.5)*36;[cite: 4, 5]
+        starPos[i*3+2] = (Math.random()-0.5)*30 - 4;[cite: 4, 5]
+      }
+      starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));[cite: 4, 5]
+      const starMat = new THREE.PointsMaterial({
+        color:0xd8ccfb, size:0.05, sizeAttenuation:true,[cite: 4, 5]
+        transparent:true, opacity:0.65, blending:THREE.AdditiveBlending, depthWrite:false[cite: 4]
+      });
+      const stars = new THREE.Points(starGeo, starMat);[cite: 4, 5]
+      scene.add(stars);[cite: 4, 5]
+
+      if(reduceMotion2){
+        renderer.render(scene, camera);[cite: 4, 5]
+      } else {
+        const clock = new THREE.Clock();[cite: 4, 5]
+        (function animateStars(){
+          requestAnimationFrame(animateStars);[cite: 4, 5]
+          const t = clock.getElapsedTime();[cite: 4, 5]
+          stars.rotation.y = t*0.01;[cite: 4, 5]
+          stars.rotation.x = t*0.004;[cite: 4, 5]
+          renderer.render(scene, camera);[cite: 4, 5]
+        })();
+      }
+    } catch(err) {
+      console.warn('ambient starfield unavailable', err);[cite: 4, 5]
+    }
+  </script>
+</body>
+</html>

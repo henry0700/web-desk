@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log in — AERIS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0c0817; --surface:#1b1430; --surface-2:#24193f; --line:rgba(255,255,255,.08);
+    --violet:#a78bfa; --violet-soft:#c4b5fd; --pink:#f472b6; --amber:#fbbf7d;
+    --text:#f4f1fb; --muted:#9c90bd; --danger:#fb7185; --ok:#4ade80;
+    --ease:cubic-bezier(.16,1,.3,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    min-height:100vh;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+    display:flex;align-items:center;justify-content:center;padding:32px;position:relative;overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,.display{font-family:'Space Grotesk',sans-serif;}
+  a{color:inherit;}
+  .aurora{position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(650px 550px at 12% 15%, rgba(167,139,250,.20), transparent 60%),
+      radial-gradient(650px 550px at 88% 85%, rgba(244,114,182,.16), transparent 60%);
+    animation:drift 20s ease-in-out infinite alternate;}
+  @keyframes drift{0%{transform:translate3d(0,0,0) scale(1);}100%{transform:translate3d(-2%,2%,0) scale(1.05);}}
+
+  .back-link{position:absolute;top:28px;left:32px;font-size:14px;color:var(--muted);display:flex;align-items:center;gap:6px;z-index:5;text-decoration:none;transition:.25s;}
+  .back-link:hover{color:var(--text);}
+
+  .panel{
+    position:relative;z-index:2;width:100%;max-width:420px;
+    background:linear-gradient(160deg,var(--surface),var(--surface-2));
+    border:1px solid var(--line);border-radius:22px;padding:40px 36px 34px;
+    box-shadow:0 30px 80px -30px rgba(0,0,0,.6);
+    opacity:0;transform:translateY(18px);animation:rise .7s var(--ease) .1s forwards;
+  }
+  @keyframes rise{to{opacity:1;transform:translateY(0);}}
+
+  .brand{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:22px;}
+  .logo-mark{width:26px;height:26px;border-radius:8px;background:conic-gradient(from 140deg,var(--violet),var(--pink),var(--amber),var(--violet));box-shadow:0 0 16px rgba(167,139,250,.5);}
+  .brand span{font-weight:600;letter-spacing:.06em;font-size:14px;}
+
+  .title{text-align:center;margin-bottom:26px;}
+  .title h1{font-size:22px;font-weight:600;margin-bottom:6px;}
+  .title p{font-size:13.5px;color:var(--muted);}
+
+  /* toggle */
+  .toggle{
+    display:flex;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:26px;position:relative;
+  }
+  .toggle button{
+    flex:1;position:relative;z-index:2;background:transparent;border:none;color:var(--muted);
+    font-family:'Inter',sans-serif;font-weight:600;font-size:13.5px;padding:10px 0;border-radius:9px;cursor:pointer;
+    transition:color .3s var(--ease);
+  }
+  .toggle button.active{color:#160a26;}
+  .toggle-thumb{
+    position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);border-radius:9px;
+    background:linear-gradient(90deg,var(--violet),var(--pink));
+    transition:transform .35s var(--ease);
+    box-shadow:0 6px 18px -6px rgba(167,139,250,.6);
+  }
+  .toggle[data-mode="admin"] .toggle-thumb{transform:translateX(100%);}
+
+  .field{margin-bottom:16px;}
+  .field label{font-size:12.5px;color:var(--muted);display:block;margin-bottom:6px;}
+  .input-wrap{position:relative;}
+  .field input{
+    width:100%;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:10px;
+    padding:12px 14px;color:var(--text);font-family:inherit;font-size:14px;transition:.25s;
+  }
+  .field input:focus{outline:none;border-color:var(--violet-soft);box-shadow:0 0 0 3px rgba(167,139,250,.15);}
+  .field input.err{border-color:var(--danger);}
+  .toggle-pw{
+    position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);
+    cursor:pointer;font-size:12.5px;padding:4px;
+  }
+  .toggle-pw:hover{color:var(--text);}
+  .err-msg{font-size:12px;color:var(--danger);margin-top:6px;display:none;}
+  .err-msg.show{display:block;}
+
+  .row-between{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;margin:4px 0 20px;color:var(--muted);}
+  .remember{display:flex;align-items:center;gap:7px;}
+  .remember input{accent-color:var(--violet);}
+  .row-between a{color:var(--violet-soft);text-decoration:none;}
+  .row-between a:hover{color:var(--text);}
+
+  .btn{
+    width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+    padding:13px 22px;border-radius:12px;font-size:14.5px;font-weight:600;border:none;cursor:pointer;
+    background:linear-gradient(90deg,var(--violet),var(--pink));color:#160a26;
+    box-shadow:0 8px 26px -8px rgba(167,139,250,.6);
+    transition:transform .25s var(--ease),box-shadow .25s var(--ease),opacity .25s;
+    font-family:'Inter',sans-serif;
+  }
+  .btn:hover{transform:translateY(-2px);box-shadow:0 10px 32px -6px rgba(244,114,182,.65);}
+  .btn:active{transform:scale(.97);}
+  .btn.loading{opacity:.75;pointer-events:none;}
+  .btn .spinner{width:14px;height:14px;border-radius:50%;border:2px solid rgba(22,10,38,.3);border-top-color:#160a26;
+    animation:spin .7s linear infinite;display:none;}
+  .btn.loading .spinner{display:inline-block;}
+  .btn.loading .btn-text{display:none;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .divider{display:flex;align-items:center;gap:12px;margin:22px 0;color:var(--muted);font-size:12px;}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line);}
+
+  .sso{display:flex;gap:10px;}
+  .sso button{
+    flex:1;background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:10px;
+    color:var(--text);font-size:13px;cursor:pointer;transition:.25s;font-family:'Inter',sans-serif;
+  }
+  .sso button:hover{background:rgba(167,139,250,.08);border-color:rgba(167,139,250,.3);}
+
+  .switch-mode{text-align:center;margin-top:22px;font-size:13.5px;color:var(--muted);}
+  .switch-mode a{color:var(--violet-soft);cursor:pointer;font-weight:600;}
+  .switch-mode a:hover{color:var(--text);}
+
+  .badge{
+    display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--amber);border:1px solid rgba(251,183,125,.3);background:rgba(251,183,125,.06);
+    padding:4px 10px;border-radius:999px;margin-bottom:16px;
+  }
+
+  .toast{
+    position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);z-index:99;
+    background:var(--surface-2);border:1px solid rgba(74,222,128,.4);color:var(--text);padding:14px 22px;border-radius:12px;
+    font-size:13.5px;display:flex;align-items:center;gap:10px;opacity:0;pointer-events:none;transition:.4s var(--ease);
+    box-shadow:0 20px 50px -18px rgba(0,0,0,.6);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);}
+
+  @media(max-width:480px){ .panel{padding:32px 24px 28px;} }
+</style>
+</head>
+<body>
+<div class="aurora"></div>
+<a href="index.html" class="back-link">← Back to site</a>
+
+<div class="panel">
+  <div class="brand"><div class="logo-mark"></div><span>H A R S H ' S </span></div>
+
+  <div class="toggle" id="toggle" data-mode="user">
+    <div class="toggle-thumb"></div>
+    <button type="button" class="active" data-mode="user">User login</button>
+    <button type="button" data-mode="admin">Admin login</button>
+  </div>
+
+  <div class="title">
+    <h1 id="titleText">Welcome back</h1>
+    <p id="subText">Log in to view your projects and messages.</p>
+  </div>
+
+  <span class="badge" id="adminBadge" style="display:none;">🔒 Restricted access</span>
+
+  <form id="loginForm" novalidate>
+    <div class="field">
+      <label id="idLabel">Email address</label>
+      <input type="text" id="idInput" placeholder="jane@email.com" autocomplete="username">
+      <div class="err-msg" id="idErr">Enter a valid email address.</div>
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <div class="input-wrap">
+        <input type="password" id="pwInput" placeholder="••••••••" autocomplete="current-password">
+        <button type="button" class="toggle-pw" id="pwToggle">Show</button>
+      </div>
+      <div class="err-msg" id="pwErr">Password must be at least 6 characters.</div>
+    </div>
+
+    <div class="row-between">
+      <label class="remember"><input type="checkbox" checked> Remember me</label>
+      <a href="#" id="forgotLink">Forgot password?</a>
+    </div>
+
+    <button type="submit" class="btn" id="submitBtn">
+      <span class="btn-text" id="btnText">Log in</span>
+      <span class="spinner"></span>
+    </button>
+  </form>
+
+  <div class="divider">or continue with</div>
+  <div class="sso">
+    <button type="button" onclick="fakeSSO('Google')">Google</button>
+    <button type="button" onclick="fakeSSO('Microsoft')">Microsoft</button>
+  </div>
+
+  <div class="switch-mode" id="signupRow">
+    Don't have an account? <a id="signupLink">Sign up</a>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="dot"></span><span id="toastText">Signed in successfully</span></div>
+
+<script>
+  const toggle = document.getElementById('toggle');
+  const toggleBtns = toggle.querySelectorAll('button');
+  const titleText = document.getElementById('titleText');
+  const subText = document.getElementById('subText');
+  const idLabel = document.getElementById('idLabel');
+  const idInput = document.getElementById('idInput');
+  const adminBadge = document.getElementById('adminBadge');
+  const signupRow = document.getElementById('signupRow');
+  const btnText = document.getElementById('btnText');
+  const submitBtn = document.getElementById('submitBtn');
+  const form = document.getElementById('loginForm');
+  const toast = document.getElementById('toast');
+  const toastText = document.getElementById('toastText');
+
+  let mode = 'user';
+
+  function setMode(next){
+    mode = next;
+    toggle.dataset.mode = mode;
+    toggleBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+
+    if(mode === 'admin'){
+      titleText.textContent = 'Admin sign in';
+      subText.textContent = 'Restricted access — administrators only.';
+      idLabel.textContent = 'Admin ID or email';
+      idInput.placeholder = 'admin@aeris.design';
+      adminBadge.style.display = 'inline-flex';
+      signupRow.style.display = 'none';
+      btnText.textContent = 'Access dashboard';
+    } else {
+      titleText.textContent = 'Welcome back';
+      subText.textContent = 'Log in to view your projects and messages.';
+      idLabel.textContent = 'Email address';
+      idInput.placeholder = 'jane@email.com';
+      adminBadge.style.display = 'none';
+      signupRow.style.display = 'block';
+      btnText.textContent = 'Log in';
+    }
+    clearErrors();
+  }
+
+  toggleBtns.forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+
+  // password show/hide
+  const pwInput = document.getElementById('pwInput');
+  const pwToggle = document.getElementById('pwToggle');
+  pwToggle.addEventListener('click', () => {
+    const isPw = pwInput.type === 'password';
+    pwInput.type = isPw ? 'text' : 'password';
+    pwToggle.textContent = isPw ? 'Hide' : 'Show';
+  });
+
+  function clearErrors(){
+    idInput.classList.remove('err');
+    pwInput.classList.remove('err');
+    document.getElementById('idErr').classList.remove('show');
+    document.getElementById('pwErr').classList.remove('show');
+  }
+
+  function showToast(msg){
+    toastText.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(()=> toast.classList.remove('show'), 3200);
+  }
+
+  function fakeSSO(provider){
+    showToast('Redirecting to ' + provider + ' sign-in…');
+  }
+
+  document.getElementById('forgotLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    showToast('Password reset link sent (demo)');
+  });
+
+  const signupLink = document.getElementById('signupLink');
+  if(signupLink){
+    signupLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      showToast('Sign-up flow coming soon');
+    });
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    clearErrors();
+    let valid = true;
+
+    const idVal = idInput.value.trim();
+    const pwVal = pwInput.value;
+
+    const emailOk = mode === 'admin' ? idVal.length > 2 : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(idVal);
+    if(!emailOk){
+      idInput.classList.add('err');
+      document.getElementById('idErr').classList.add('show');
+      valid = false;
+    }
+    if(pwVal.length < 6){
+      pwInput.classList.add('err');
+      document.getElementById('pwErr').classList.add('show');
+      valid = false;
+    }
+    if(!valid) return;
+
+    submitBtn.classList.add('loading');
+    setTimeout(() => {
+      submitBtn.classList.remove('loading');
+      if(mode === 'admin'){
+        showToast('Welcome back, admin ✓ Redirecting…');
+        setTimeout(() => { window.location.href = 'admin-dashboard.html'; }, 900);
+      } else {
+        showToast('Signed in successfully ✓ Redirecting…');
+        setTimeout(() => { window.location.href = 'index.html'; }, 900);
+      }
+      form.reset();
+    }, 1100);
+  });
+</script>
+</body>
+</html>
